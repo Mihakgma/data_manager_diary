@@ -6,10 +6,11 @@ from scipy.stats import fisher_exact
 from numpy import nan as np_nan
 # CIs for proportions
 from statsmodels.stats.proportion import proportion_confint
+from datetime import datetime as datetime_dt
 
 
-INDEPENDENT_SAMPLES = 'Independent of Grouping Factor (fail to reject H0)\n'
-DEPENDENT_SAMPLES = 'Dependent of Grouping Factor (reject H0)\n'
+INDEPENDENT_SAMPLES = '\nIndependent of Grouping Factor (p-value >= 0.05 -> fail to reject H0)\n'
+DEPENDENT_SAMPLES = '\nDependent of Grouping Factor (p-value < 0.05 -> reject H0)\n'
 
 
 def chi_squaredtest(table):
@@ -35,7 +36,7 @@ def chi_squaredtest(table):
         print(s)
     # interpret p-value
     alpha = 1.0 - prob
-    s = 'significance=%.3f, p=%.3f\n' % (alpha, p)
+    s = 'significance=%.3f, p=%.3f' % (alpha, p)
     out_str += s
     print(s)
     if p <= alpha:
@@ -140,9 +141,10 @@ class BinarStatsCalc:
     def set_groups_number(self, groups_number):
         self.__groups_number = groups_number
 
-    def _calculate(self):
+
+    def calculate(self, groups_number):
         # self.groups_number = self.process_integer_inputted("Пожалуйста, введите количество групп сравнения:\n")
-        groups_number = self.get_groups_number()
+        # groups_number = self.get_groups_number()
         data_list = []
         out_list = []
         for i in range(groups_number):
@@ -159,7 +161,7 @@ class BinarStatsCalc:
             # print(ci_results)
             txt += f"N = <{N}>, n = <{n}>\n"
             ci_str = ci_results["result_str"]
-            txt += f"<{ci_str}>\n"
+            txt += f"<{ci_str}>"
             # print(txt)
             out_list.append(txt)
             data_list.append([n, k])
@@ -167,11 +169,12 @@ class BinarStatsCalc:
             test_result = chisq_fisher_tests(lst1=data_list[0],
                                              lst2=data_list[1])
         # print(test_result)
-        out_list.append("\n".join(list(test_result)))
+        out_list.append("\n".join([str(i) for i in list(test_result)]))
         # print(*out_list)
         print(f"Длина листа с результатами: {len(out_list)}")
+        print(*out_list, sep="\n")
         return out_list
-        # print(*out_list, sep="\n")
+
 
     def __print_input_error(self, max_value):
         # if max_value == -999:
@@ -193,7 +196,7 @@ class BinarStatsCalc:
             answer = input(text)
             try:
                 digit_inputted = int(answer)
-                if max_freq > digit_inputted >= self.__MIN_ABS_FREQENCY:
+                if max_freq >= digit_inputted >= self.__MIN_ABS_FREQENCY:
                     return digit_inputted
                 else:
                     self.__print_input_error(max_freq)
@@ -202,6 +205,27 @@ class BinarStatsCalc:
             except ValueError:
                 self.__print_input_error(max_value=max_freq)
         self.__invoke_application_fail()
+
+    @staticmethod
+    def write_lines_to_file(file_path, lines):
+        """
+          Writes lines to a text file, creating the file if it doesn't exist.
+
+          Args:
+              file_path (str): The path to the text file.
+              lines (list): A list of strings to write to the file.
+        """
+
+        with open(file_path, 'a+', encoding='utf-8') as f:
+            for line in lines:
+                f.write(line + '\n')
+        print(f"Results has been added to a file: <{file_path}>")
+
+    def get_current_time_string(self):
+        """Возвращает текущее время в формате ДД.ММ.ГГГГ ЧЧ:ММ:СС в виде строки."""
+        now = datetime_dt.now()
+        return now.strftime("%d.%m.%Y %H:%M:%S")
+
 
     def init_main_menu(self):
         i = 0
@@ -221,8 +245,12 @@ class BinarStatsCalc:
                     print(docs)
                     break
                 elif digit_inputted == 2:
-                    results = self._calculate()
-                    print(results)
+                    results = self.calculate(groups_number=self.get_groups_number())
+                    # print(results)
+                    res = ["\n"*2, self.get_current_time_string()]
+                    res += results
+                    BinarStatsCalc.write_lines_to_file(file_path=self.__RESULTS_FILE_NAME,
+                                                       lines=res)
                     break
                 else:
                     self.__print_input_error(max_menu_value)
