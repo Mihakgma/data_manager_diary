@@ -180,7 +180,7 @@ class BinarStatsCalc:
         # if max_value == -999:
         #     max_value = self.__MAX_ABS_FREQENCY
         print("Вводимое значение должно быть в интервале")
-        print(f"ОТ <{self.__MIN_ABS_FREQENCY}> и ДО <{max_value}> (не включ.)")
+        print(f"ОТ <{self.__MIN_ABS_FREQENCY}> и ДО <{max_value}>")
 
     def __invoke_application_fail(self):
         print("Работа программы завершена.")
