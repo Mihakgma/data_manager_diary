@@ -1,0 +1,25 @@
+
+
+
+17.06.2024 15:26:52
+
+---///---
+<1> группа:
+N = <111>, n = <39>
+<35,14 [26,25–44,02] %>
+
+---///---
+<2> группа:
+N = <101>, n = <59>
+<58,42 [48,8–68,03] %>
+Chi-squared test:
+
+dof=1
+probability=0.950, critical=3.841, stat=10.613
+
+Dependent of Grouping Factor (p-value < 0.05 -> reject H0)
+significance=0.050, p=0.001
+Dependent of Grouping Factor (p-value < 0.05 -> reject H0)
+
+10.61
+0.00112
