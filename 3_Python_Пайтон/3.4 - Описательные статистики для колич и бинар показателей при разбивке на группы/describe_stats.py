@@ -250,8 +250,8 @@ if __name__ == '__main__':
         'группа': [1, 0, 1, 0, 1, 1, 0],
         'пол':    [0, 0, 0, 1, 1, 1, 1],
         'ГБ':     [1, 0, 0, 1, 0, '', 0],
-        "ИМТ":    [33, 25, 19.8, "", 22, 3.1, 20],
-        "возраст": [19, "", 20, 21, 51, 65, 79]
+        "ИМТ":    [33, 25, 19.8, 25, 22, 3.1, 20],
+        "возраст": [19, 22, 20, 21, 51, 65, 79]
     })
 
     descr_test = Describer(df=df_test)
@@ -263,3 +263,5 @@ if __name__ == '__main__':
                                                             quantitative_variable_names=['ИМТ', 'возраст'],
                                                             colnames_lang="EN")
     print(res_quantit)
+    res_binar.to_excel("test_binary_vars_processing.xlsx")
+    res_quantit.to_excel("test_quantit_vars_processing.xlsx")
