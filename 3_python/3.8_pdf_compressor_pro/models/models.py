@@ -54,7 +54,7 @@ class Setting(Base):
     compression_min_boundary = Column(Integer, nullable=False, default=1024)
     procession_timeout = Column(Integer, nullable=False, default=35)
     is_active = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime(timezone=False), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     info = Column(Text, nullable=True)
 
     # Constraint для уникальности комбинации полей
@@ -86,7 +86,7 @@ class ProcessedFile(Base):
     file_full_path = Column(String(200), nullable=False, unique=True)
     is_successful = Column(Boolean, nullable=False)
     fail_reason_id = Column(Integer, ForeignKey("fail_reason.id"), nullable=True)
-    processed_date = Column(DateTime(timezone=False), server_default=func.now(), nullable=False)
+    processed_date = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     setting_id = Column(Integer, ForeignKey("setting.id"), nullable=False)
     file_compression_kbites = Column(Float, nullable=False, default=0.0)
     other_fail_reason = Column(Text, nullable=True)
