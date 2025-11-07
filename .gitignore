@@ -42,3 +42,6 @@ Thumbs.db
 
 # Virtual environment
 .env
+
+pdf_compressor_backup.db
+pdf_compressor.db
