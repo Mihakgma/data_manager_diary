@@ -1,6 +1,6 @@
 # main.py
 from compressor_app import main
-from models.database import create_tables, engine
+from models.database import create_tables
 
 if __name__ == '__main__':
     try:

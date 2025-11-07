@@ -1,11 +1,11 @@
+# stats_window.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime, timedelta
-from sqlalchemy import func, and_, case
+from datetime import datetime
+from sqlalchemy import func, case
 from models.database import get_db
 from models.models import ProcessedFile, Setting
-import pandas as pd
-from typing import Dict, List, Tuple
 
 
 class StatsWindow:
@@ -98,7 +98,7 @@ class StatsWindow:
 
         # Таблица
         columns = ("№", "date", "total", "success_count", "success_ratio",
-                   "fail_count", "fail_ratio", "start_time", "end_time")
+                   "fail_count", "fail_ratio", "saved_space", "start_time", "end_time")
 
         self.tree = ttk.Treeview(
             table_container,
@@ -128,6 +128,7 @@ class StatsWindow:
             "success_ratio": {"text": "+доля,%", "width": 80, "anchor": tk.CENTER},
             "fail_count": {"text": "-n, шт.", "width": 80, "anchor": tk.CENTER},
             "fail_ratio": {"text": "-доля,%", "width": 80, "anchor": tk.CENTER},
+            "saved_space": {"text": "Экономия, Мб", "width": 100, "anchor": tk.CENTER},
             "start_time": {"text": "Начало", "width": 80, "anchor": tk.CENTER},
             "end_time": {"text": "Окончание", "width": 80, "anchor": tk.CENTER}
         }
@@ -146,6 +147,7 @@ class StatsWindow:
             "success_ratio": "Доля успешно сжатых файлов в процентах",
             "fail_count": "Количество файлов с ошибкой сжатия",
             "fail_ratio": "Доля файлов с ошибкой сжатия в процентах",
+            "saved_space": "Объем сэкономленного дискового пространства в МБ",
             "start_time": "Время начала обработки первого файла",
             "end_time": "Время окончания обработки последнего файла"
         }
@@ -184,6 +186,34 @@ class StatsWindow:
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось загрузить данные: {e}")
 
+    def calculate_saved_space_for_period(self, db, period, group_by):
+        """Расчет сэкономленного места за период"""
+        try:
+            # Получаем все успешно обработанные файлы за период
+            if group_by == "month":
+                date_filter = func.strftime("%Y-%m", ProcessedFile.processed_date) == period
+            else:  # day
+                date_filter = func.strftime("%Y-%m-%d", ProcessedFile.processed_date) == period
+
+            successful_files = db.query(ProcessedFile).filter(
+                ProcessedFile.is_successful == True,
+                date_filter
+            ).all()
+
+            total_saved_mb = 0
+
+            for pf in successful_files:
+                compressed_size_kb = pf.file_compression_kbites
+                if compressed_size_kb > 0:
+                    saved_mb = compressed_size_kb / 1024
+                    total_saved_mb += saved_mb
+
+            return total_saved_mb
+
+        except Exception as e:
+            print(f"Ошибка расчета экономии для периода {period}: {e}")
+            return 0
+
     def load_table_data(self, db):
         """Загрузка данных для таблицы"""
         # Определяем формат группировки
@@ -219,6 +249,9 @@ class StatsWindow:
             success_ratio = (success_count / total * 100) if total > 0 else 0
             fail_ratio = (fail_count / total * 100) if total > 0 else 0
 
+            # Расчет сэкономленного места
+            saved_space_mb = self.calculate_saved_space_for_period(db, row.period, self.group_by_var.get())
+
             # Форматируем время
             start_time = row.first_time.strftime("%H:%M:%S") if row.first_time else "N/A"
             end_time = row.last_time.strftime("%H:%M:%S") if row.last_time else "N/A"
@@ -237,6 +270,7 @@ class StatsWindow:
                 f"{success_ratio:.1f}%",
                 fail_count,
                 f"{fail_ratio:.1f}%",
+                f"{saved_space_mb:.2f}",
                 start_time,
                 end_time
             ))
@@ -247,6 +281,16 @@ class StatsWindow:
         total_files = db.query(ProcessedFile).count()
         success_files = db.query(ProcessedFile).filter(ProcessedFile.is_successful == True).count()
         settings_count = db.query(Setting).count()
+
+        # Расчет общей экономии места
+        total_saved_mb = 0
+        successful_files = db.query(ProcessedFile).filter(ProcessedFile.is_successful == True).all()
+
+        for pf in successful_files:
+            compressed_size_kb = pf.file_compression_kbites
+            if compressed_size_kb > 0:
+                saved_mb = compressed_size_kb / 1024
+                total_saved_mb += saved_mb
 
         # Временные метрики
         first_record = db.query(ProcessedFile).order_by(ProcessedFile.processed_date).first()
@@ -278,6 +322,7 @@ class StatsWindow:
 
 • Всего файлов в базе: {total_files}
 • Успешно сжато: {success_files} ({success_files / total_files * 100:.1f}% если total_files > 0 else 0%)
+• Общая экономия места: {total_saved_mb:.2f} МБ ({total_saved_mb / 1024:.2f} ГБ)
 • Количество настроек: {settings_count}
 • Срок использования: {usage_period}
 • Популярная настройка: {popular_setting_info}
@@ -306,6 +351,7 @@ class StatsWindow:
 • +доля,% - процент успешных сжатий от общего числа
 • -n, шт. - количество неудачных сжатий
 • -доля,% - процент неудачных сжатий
+• Экономия, Мб - объем сэкономленного дискового пространства
 • Начало - время обработки первого файла в периоде
 • Окончание - время обработки последнего файла
 
@@ -327,6 +373,16 @@ class StatsWindow:
             total_files = db.query(ProcessedFile).count()
             success_files = db.query(ProcessedFile).filter(ProcessedFile.is_successful == True).count()
 
+            # Расчет общей экономии места
+            total_saved_mb = 0
+            successful_files_list = db.query(ProcessedFile).filter(ProcessedFile.is_successful == True).all()
+
+            for pf in successful_files_list:
+                compressed_size_kb = pf.file_compression_kbites
+                if compressed_size_kb > 0:
+                    saved_mb = compressed_size_kb / 1024
+                    total_saved_mb += saved_mb
+
             # Статистика по настройкам
             settings_stats = db.query(
                 Setting.id,
@@ -346,7 +402,8 @@ class StatsWindow:
             extended_text += f"📁 ОБРАБОТКА ФАЙЛОВ:\n"
             extended_text += f"• Всего обработано: {total_files} файлов\n"
             extended_text += f"• Успешных сжатий: {success_files} ({success_files / total_files * 100:.1f}%)\n"
-            extended_text += f"• Ошибок сжатия: {total_files - success_files} ({(total_files - success_files) / total_files * 100:.1f}%)\n\n"
+            extended_text += f"• Ошибок сжатия: {total_files - success_files} ({(total_files - success_files) / total_files * 100:.1f}%)\n"
+            extended_text += f"• Общая экономия места: {total_saved_mb:.2f} МБ ({total_saved_mb / 1024:.2f} ГБ)\n\n"
 
             extended_text += f"⚙️ СТАТИСТИКА НАСТРОЕК:\n"
             for stat in settings_stats:

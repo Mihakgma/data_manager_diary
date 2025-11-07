@@ -4,6 +4,8 @@
 Добавляет +7 часов ко всем существующим записям в столбцах с датами
 """
 
+# scripts/fix_timezone_offset.py
+
 import os
 import sys
 from datetime import datetime, timedelta
