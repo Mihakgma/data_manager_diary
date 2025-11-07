@@ -17,6 +17,7 @@ import traceback
 from models.database import get_db, create_tables
 from models.models import Setting, FailReason, ProcessedFile
 from crud.operations import DBOperations
+from stats_window import StatsWindow
 
 
 class PDFCompressor:
@@ -420,6 +421,8 @@ class PDFCompressor:
         ttk.Button(main_frame, text="Открыть папку с журналами", command=self.open_logs_folder).grid(row=7, column=2,
                                                                                                      pady=10,
                                                                                                      sticky=tk.E)
+        ttk.Button(main_frame, text="Статистика сжатия",
+                   command=self.show_stats).grid(row=8, column=1, pady=10)
 
         # Кнопка управления настройками
         self.settings_button.grid(row=8, column=2, pady=10, sticky=tk.E)
@@ -870,6 +873,10 @@ class PDFCompressor:
         finally:
             # Деактивируем кнопку пропуска
             self.skip_button.config(state=tk.DISABLED)
+
+    def show_stats(self):
+        """Показать окно статистики"""
+        StatsWindow(self.root)
 
 
 def main():
